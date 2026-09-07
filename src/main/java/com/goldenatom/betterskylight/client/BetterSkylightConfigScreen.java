@@ -71,6 +71,12 @@ public final class BetterSkylightConfigScreen extends Screen {
     }
 
     private void saveAndClose() {
+        boolean lightingChanged = enabled != BetterSkylightConfig.ENABLED.get()
+                || ambientSkyLightEnabled
+                != BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get()
+                || directSunlightEnabled
+                != BetterSkylightConfig.DIRECT_SUNLIGHT_ENABLED.get();
+
         BetterSkylightConfig.ENABLED.set(enabled);
         BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.set(
                 ambientSkyLightEnabled
@@ -80,6 +86,9 @@ public final class BetterSkylightConfigScreen extends Screen {
         );
 
         BetterSkylightConfig.save();
+        if (lightingChanged && minecraft.level != null) {
+            minecraft.levelRenderer.allChanged();
+        }
         minecraft.setScreen(parent);
     }
 
