@@ -24,7 +24,7 @@ public final class BetterSkylightConfig {
 
         AMBIENT_CONE_ANGLE_DEGREES = builder
                 .comment("Angular radius used for ambient sky visibility.")
-                .defineInRange("ambient_cone_angle_degrees", 6.0D, 0.5D, 45.0D);
+                .defineInRange("ambient_cone_angle_degrees", 7.0D, 0.5D, 45.0D);
 
         ANALYSIS_DISTANCE = builder
                 .comment("Maximum distance used when searching for sky openings.")
