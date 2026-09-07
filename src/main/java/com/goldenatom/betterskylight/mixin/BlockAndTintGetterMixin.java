@@ -22,4 +22,26 @@ public interface BlockAndTintGetterMixin {
             cir.setReturnValue(SkyExposureCache.getSkyLight(level, pos, cir.getReturnValueI()));
         }
     }
+
+    @Inject(method = "getRawBrightness", at = @At("RETURN"), cancellable = true)
+    private void betterSkylight$replaceCombinedLight(
+            BlockPos pos,
+            int skyDarken,
+            CallbackInfoReturnable<Integer> cir
+    ) {
+        BlockAndTintGetter level = (BlockAndTintGetter) (Object) this;
+        int blockLight = level.getLightEngine()
+                .getLayerListener(LightLayer.BLOCK)
+                .getLightValue(pos);
+        int vanillaSkyLight = level.getLightEngine()
+                .getLayerListener(LightLayer.SKY)
+                .getLightValue(pos);
+        int skyLight = SkyExposureCache.getSkyLight(
+                level,
+                pos,
+                vanillaSkyLight
+        );
+
+        cir.setReturnValue(Math.max(blockLight, skyLight - skyDarken));
+    }
 }

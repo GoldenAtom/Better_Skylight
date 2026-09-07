@@ -95,9 +95,7 @@ public final class SkyExposureCache {
                 : Math.min(1.0D, coneRadius / opening.distance);
         int calculated = (int) Math.round(openness * 15.0D);
 
-        // This milestone only restores missing ambient light. It does not make
-        // vanilla-lit positions darker until the full occlusion field exists.
-        return Math.max(vanillaValue, Math.max(0, Math.min(15, calculated)));
+        return Math.max(0, Math.min(15, calculated));
     }
 
     private static int findCeilingDistance(LevelReader level, BlockPos pos) {
