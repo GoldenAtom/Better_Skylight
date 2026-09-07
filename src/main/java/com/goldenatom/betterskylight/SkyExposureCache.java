@@ -12,8 +12,8 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Cached per-block ambient sky exposure. The calculation samples verified sky
- * openings around an overhead blocker and blends their directional exposure.
+ * Cached per-block ambient sky exposure. This first implementation uses the
+ * nearest overhead blocker and sampled verified sky openings around it.
  */
 public final class SkyExposureCache {
     private static final int ANGULAR_SAMPLES = 16;
@@ -84,9 +84,16 @@ public final class SkyExposureCache {
             return 15;
         }
 
+        OpeningSearch opening = findNearestOpening(level, pos);
+        if (opening.distance < 0) {
+            return vanillaValue;
+        }
+
         double coneAngle = Math.toRadians(BetterSkylightConfig.AMBIENT_CONE_ANGLE_DEGREES.get());
         double coneRadius = ceilingDistance * Math.tan(coneAngle);
-        double openness = findAmbientOpenness(level, pos, coneRadius);
+        double openness = opening.distance == 0
+                ? 1.0D
+                : Math.min(1.0D, coneRadius / opening.distance);
         int calculated = (int) Math.round(openness * 15.0D);
 
         // This milestone only restores missing ambient light. It does not make
@@ -122,21 +129,10 @@ public final class SkyExposureCache {
         return -1;
     }
 
-    private static double findAmbientOpenness(
-            LevelReader level,
-            BlockPos pos,
-            double coneRadius
-    ) {
+    private static OpeningSearch findNearestOpening(LevelReader level, BlockPos pos) {
         int maximumDistance = BetterSkylightConfig.ANALYSIS_DISTANCE.get();
-        int[] openingDistances = new int[ANGULAR_SAMPLES];
-        int unresolvedDirections = ANGULAR_SAMPLES;
-
         for (int radius = 1; radius <= maximumDistance; radius = nextRadius(radius, maximumDistance)) {
             for (int sample = 0; sample < ANGULAR_SAMPLES; sample++) {
-                if (openingDistances[sample] != 0) {
-                    continue;
-                }
-
                 double angle = Math.PI * 2.0D * sample / ANGULAR_SAMPLES;
                 int x = pos.getX() + (int) Math.round(Math.cos(angle) * radius);
                 int z = pos.getZ() + (int) Math.round(Math.sin(angle) * radius);
@@ -147,26 +143,16 @@ public final class SkyExposureCache {
 
                 int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
                 if (surfaceY <= pos.getY() + 1) {
-                    openingDistances[sample] = radius;
-                    unresolvedDirections--;
+                    return new OpeningSearch(radius);
                 }
             }
 
-            if (unresolvedDirections == 0 || radius == maximumDistance) {
+            if (radius == maximumDistance) {
                 break;
             }
         }
 
-        double exposureSum = 0.0D;
-        for (int distance : openingDistances) {
-            if (distance > 0) {
-                exposureSum += Math.min(1.0D, coneRadius / distance);
-            }
-        }
-
-        // Square-root response keeps a partial view of the sky useful while
-        // still blending the edge over all sampled directions.
-        return Math.sqrt(exposureSum / ANGULAR_SAMPLES);
+        return new OpeningSearch(-1);
     }
 
     private static boolean hasLoadedChunk(LevelReader level, int blockX, int blockZ) {
@@ -180,5 +166,8 @@ public final class SkyExposureCache {
             return radius + 1;
         }
         return Math.min(maximumDistance, radius * 2);
+    }
+
+    private record OpeningSearch(int distance) {
     }
 }
