@@ -6,7 +6,6 @@ public final class BetterSkylightConfig {
     public static final ModConfigSpec SPEC;
 
     public static final ModConfigSpec.BooleanValue ENABLED;
-    public static final ModConfigSpec.BooleanValue AMBIENT_SKY_LIGHT_ENABLED;
     public static final ModConfigSpec.DoubleValue AMBIENT_CONE_ANGLE_DEGREES;
     public static final ModConfigSpec.IntValue ANALYSIS_DISTANCE;
 
@@ -18,10 +17,6 @@ public final class BetterSkylightConfig {
         ENABLED = builder
                 .comment("Master switch. Disable to use vanilla skylight.")
                 .define("enabled", true);
-
-        AMBIENT_SKY_LIGHT_ENABLED = builder
-                .comment("Enable geometry-aware ambient skylight.")
-                .define("ambient_sky_light_enabled", true);
 
         builder.pop();
 

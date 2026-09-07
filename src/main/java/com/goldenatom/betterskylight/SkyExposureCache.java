@@ -24,8 +24,7 @@ public final class SkyExposureCache {
     }
 
     public static int getSkyLight(BlockGetter level, BlockPos pos, int vanillaValue) {
-        if (!BetterSkylightConfig.ENABLED.get()
-                || !BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get()) {
+        if (!BetterSkylightConfig.ENABLED.get()) {
             return vanillaValue;
         }
 

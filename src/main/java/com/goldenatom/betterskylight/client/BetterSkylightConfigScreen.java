@@ -11,15 +11,12 @@ public final class BetterSkylightConfigScreen extends Screen {
     private final Screen parent;
 
     private boolean enabled;
-    private boolean ambientSkyLightEnabled;
 
     public BetterSkylightConfigScreen(Screen parent) {
         super(Component.translatable("screen.better_skylight.config"));
         this.parent = parent;
 
         this.enabled = BetterSkylightConfig.ENABLED.get();
-        this.ambientSkyLightEnabled =
-                BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get();
     }
 
     @Override
@@ -33,14 +30,6 @@ public final class BetterSkylightConfigScreen extends Screen {
                     button.setMessage(label("enabled", enabled));
                 }
         ).bounds(left, 60, 200, 20).build());
-
-        addRenderableWidget(Button.builder(
-                label("ambient", ambientSkyLightEnabled),
-                button -> {
-                    ambientSkyLightEnabled = !ambientSkyLightEnabled;
-                    button.setMessage(label("ambient", ambientSkyLightEnabled));
-                }
-        ).bounds(left, 86, 200, 20).build());
 
         addRenderableWidget(Button.builder(
                 CommonComponents.GUI_DONE,
@@ -58,14 +47,9 @@ public final class BetterSkylightConfigScreen extends Screen {
     }
 
     private void saveAndClose() {
-        boolean lightingChanged = enabled != BetterSkylightConfig.ENABLED.get()
-                || ambientSkyLightEnabled
-                != BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get();
+        boolean lightingChanged = enabled != BetterSkylightConfig.ENABLED.get();
 
         BetterSkylightConfig.ENABLED.set(enabled);
-        BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.set(
-                ambientSkyLightEnabled
-        );
         BetterSkylightConfig.save();
         if (lightingChanged && minecraft.level != null) {
             minecraft.levelRenderer.allChanged();

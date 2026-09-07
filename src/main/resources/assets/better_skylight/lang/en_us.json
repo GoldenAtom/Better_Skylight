@@ -2,7 +2,6 @@
   "modmenu.descriptionTranslation.better_skylight": "Geometry-aware per-block skylight for Minecraft.",
   "screen.better_skylight.config": "Better Skylight Settings",
   "config.better_skylight.enabled": "Enabled: %s",
-  "config.better_skylight.ambient": "Ambient Sky Light: %s",
   "config.better_skylight.on": "On",
   "config.better_skylight.off": "Off"
 }
