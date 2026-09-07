@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.goldenatom.betterskylight.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BlockAndTintGetterMixin"
+  ],
+  "client": [
+    "RenderChunkRegionMixin",
+    "SodiumLevelSliceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

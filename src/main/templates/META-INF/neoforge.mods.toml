@@ -13,6 +13,9 @@ description='''
 Geometry-aware per-block skylight for Minecraft.
 '''
 
+[[mixins]]
+config="better_skylight.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
