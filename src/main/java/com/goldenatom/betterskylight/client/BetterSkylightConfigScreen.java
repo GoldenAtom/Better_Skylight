@@ -12,7 +12,6 @@ public final class BetterSkylightConfigScreen extends Screen {
 
     private boolean enabled;
     private boolean ambientSkyLightEnabled;
-    private boolean directSunlightEnabled;
 
     public BetterSkylightConfigScreen(Screen parent) {
         super(Component.translatable("screen.better_skylight.config"));
@@ -21,8 +20,6 @@ public final class BetterSkylightConfigScreen extends Screen {
         this.enabled = BetterSkylightConfig.ENABLED.get();
         this.ambientSkyLightEnabled =
                 BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get();
-        this.directSunlightEnabled =
-                BetterSkylightConfig.DIRECT_SUNLIGHT_ENABLED.get();
     }
 
     @Override
@@ -46,16 +43,6 @@ public final class BetterSkylightConfigScreen extends Screen {
         ).bounds(left, 86, 200, 20).build());
 
         addRenderableWidget(Button.builder(
-                label("direct_sunlight", directSunlightEnabled),
-                button -> {
-                    directSunlightEnabled = !directSunlightEnabled;
-                    button.setMessage(
-                            label("direct_sunlight", directSunlightEnabled)
-                    );
-                }
-        ).bounds(left, 112, 200, 20).build());
-
-        addRenderableWidget(Button.builder(
                 CommonComponents.GUI_DONE,
                 button -> saveAndClose()
         ).bounds(left, this.height - 40, 200, 20).build());
@@ -73,18 +60,12 @@ public final class BetterSkylightConfigScreen extends Screen {
     private void saveAndClose() {
         boolean lightingChanged = enabled != BetterSkylightConfig.ENABLED.get()
                 || ambientSkyLightEnabled
-                != BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get()
-                || directSunlightEnabled
-                != BetterSkylightConfig.DIRECT_SUNLIGHT_ENABLED.get();
+                != BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.get();
 
         BetterSkylightConfig.ENABLED.set(enabled);
         BetterSkylightConfig.AMBIENT_SKY_LIGHT_ENABLED.set(
                 ambientSkyLightEnabled
         );
-        BetterSkylightConfig.DIRECT_SUNLIGHT_ENABLED.set(
-                directSunlightEnabled
-        );
-
         BetterSkylightConfig.save();
         if (lightingChanged && minecraft.level != null) {
             minecraft.levelRenderer.allChanged();

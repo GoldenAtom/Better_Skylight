@@ -7,7 +7,6 @@ public final class BetterSkylightConfig {
 
     public static final ModConfigSpec.BooleanValue ENABLED;
     public static final ModConfigSpec.BooleanValue AMBIENT_SKY_LIGHT_ENABLED;
-    public static final ModConfigSpec.BooleanValue DIRECT_SUNLIGHT_ENABLED;
     public static final ModConfigSpec.DoubleValue AMBIENT_CONE_ANGLE_DEGREES;
     public static final ModConfigSpec.IntValue ANALYSIS_DISTANCE;
 
@@ -23,10 +22,6 @@ public final class BetterSkylightConfig {
         AMBIENT_SKY_LIGHT_ENABLED = builder
                 .comment("Enable geometry-aware ambient skylight.")
                 .define("ambient_sky_light_enabled", true);
-
-        DIRECT_SUNLIGHT_ENABLED = builder
-                .comment("Enable directional sunlight shadows.")
-                .define("direct_sunlight_enabled", true);
 
         builder.pop();
 

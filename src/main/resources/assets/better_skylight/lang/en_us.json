@@ -3,7 +3,6 @@
   "screen.better_skylight.config": "Better Skylight Settings",
   "config.better_skylight.enabled": "Enabled: %s",
   "config.better_skylight.ambient": "Ambient Sky Light: %s",
-  "config.better_skylight.direct_sunlight": "Direct Sunlight: %s",
   "config.better_skylight.on": "On",
   "config.better_skylight.off": "Off"
 }
