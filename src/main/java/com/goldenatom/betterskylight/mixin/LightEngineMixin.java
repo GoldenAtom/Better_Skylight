@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Changes the raw sky value at Minecraft's authoritative light-engine read. */
@@ -19,6 +20,16 @@ public abstract class LightEngineMixin {
     @Shadow
     @Final
     protected LightChunkGetter chunkSource;
+
+    @Inject(method = "checkBlock", at = @At("HEAD"))
+    private void betterSkylight$invalidateForBlockUpdate(
+            BlockPos pos,
+            CallbackInfo ci
+    ) {
+        if ((Object) this instanceof SkyLightEngine) {
+            SkyExposureCache.invalidate(chunkSource.getLevel());
+        }
+    }
 
     @Inject(method = "getLightValue", at = @At("RETURN"), cancellable = true)
     private void betterSkylight$replaceRawSkyLight(
