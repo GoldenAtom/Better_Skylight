@@ -67,9 +67,6 @@ public final class SkyExposureCache {
         if (level instanceof LevelReader reader) {
             return reader;
         }
-        if (level instanceof BackingLevelAccess access) {
-            return access.betterSkylight$getLevel();
-        }
         return null;
     }
 
