@@ -81,18 +81,38 @@ public final class SkyExposureCache {
         }
 
         OpeningSearch opening = findNearestOpening(level, pos);
-        if (opening.distance < 0) {
+        int propagatedOpeningDistance = inferPropagatedOpeningDistance(vanillaValue);
+        int openingDistance = nearestPositiveDistance(
+                opening.distance,
+                propagatedOpeningDistance
+        );
+        if (openingDistance < 0) {
             return vanillaValue;
         }
 
         double coneAngle = Math.toRadians(BetterSkylightConfig.AMBIENT_CONE_ANGLE_DEGREES.get());
         double coneRadius = ceilingDistance * Math.tan(coneAngle);
-        double openness = opening.distance == 0
-                ? 1.0D
-                : Math.min(1.0D, coneRadius / opening.distance);
+        double openness = Math.min(1.0D, coneRadius / openingDistance);
         int calculated = (int) Math.round(openness * 15.0D);
 
         return Math.max(0, Math.min(15, calculated));
+    }
+
+    private static int inferPropagatedOpeningDistance(int vanillaValue) {
+        // Vanilla skylight loses one level per horizontal block after entering
+        // through an opening. This gives an exact local distance for arbitrary
+        // shapes, including holes which fall between our geometric rays.
+        return vanillaValue > 0 ? Math.max(1, 15 - vanillaValue) : -1;
+    }
+
+    private static int nearestPositiveDistance(int first, int second) {
+        if (first < 0) {
+            return second;
+        }
+        if (second < 0) {
+            return first;
+        }
+        return Math.min(first, second);
     }
 
     private static int findCeilingDistance(LevelReader level, BlockPos pos) {
