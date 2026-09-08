@@ -1,14 +1,15 @@
 package com.goldenatom.betterskylight;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
@@ -17,7 +18,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
  */
 public final class SkyExposureCache {
     private static final int ANGULAR_SAMPLES = 16;
-    private static final Map<BlockGetter, Map<Long, Byte>> CACHE =
+    private static final Map<BlockGetter, ConcurrentMap<Long, Byte>> CACHE =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     private SkyExposureCache() {
@@ -28,27 +29,25 @@ public final class SkyExposureCache {
             return vanillaValue;
         }
 
-        LevelReader reader = findLevelReader(level);
-        if (reader == null) {
+        Level world = findLevel(level);
+        if (world == null) {
             return vanillaValue;
         }
 
-        Map<Long, Byte> levelCache;
+        ConcurrentMap<Long, Byte> levelCache;
         synchronized (CACHE) {
-            levelCache = CACHE.computeIfAbsent(level, ignored -> new HashMap<>());
+            levelCache = CACHE.computeIfAbsent(level, ignored -> new ConcurrentHashMap<>());
         }
 
         long key = pos.asLong();
-        synchronized (levelCache) {
-            Byte cached = levelCache.get(key);
-            if (cached != null) {
-                return cached & 0xFF;
-            }
-
-            int calculated = calculate(reader, pos, vanillaValue);
-            levelCache.put(key, (byte) calculated);
-            return calculated;
+        Byte cached = levelCache.get(key);
+        if (cached != null) {
+            return cached & 0xFF;
         }
+
+        int calculated = calculate(world, pos, vanillaValue);
+        Byte raced = levelCache.putIfAbsent(key, (byte) calculated);
+        return raced == null ? calculated : raced & 0xFF;
     }
 
     public static void invalidate(BlockGetter level) {
@@ -63,19 +62,20 @@ public final class SkyExposureCache {
         }
     }
 
-    private static LevelReader findLevelReader(BlockGetter level) {
-        if (level instanceof LevelReader reader) {
-            return reader;
+    private static Level findLevel(BlockGetter level) {
+        if (level instanceof Level world) {
+            return world;
         }
         return null;
     }
 
-    private static int calculate(LevelReader level, BlockPos pos, int vanillaValue) {
-        if (!hasLoadedChunk(level, pos.getX(), pos.getZ())) {
+    private static int calculate(Level level, BlockPos pos, int vanillaValue) {
+        LevelChunk originChunk = getLoadedChunk(level, pos.getX(), pos.getZ());
+        if (originChunk == null) {
             return vanillaValue;
         }
 
-        int ceilingDistance = findCeilingDistance(level, pos);
+        int ceilingDistance = findCeilingDistance(level, originChunk, pos);
         if (ceilingDistance < 0) {
             return 15;
         }
@@ -116,8 +116,8 @@ public final class SkyExposureCache {
         return Math.min(first, second);
     }
 
-    private static int findCeilingDistance(LevelReader level, BlockPos pos) {
-        int surfaceY = level.getHeight(
+    private static int findCeilingDistance(Level level, LevelChunk chunk, BlockPos pos) {
+        int surfaceY = chunk.getHeight(
                 Heightmap.Types.WORLD_SURFACE,
                 pos.getX(),
                 pos.getZ()
@@ -136,7 +136,7 @@ public final class SkyExposureCache {
 
         for (int y = pos.getY() + 1; y < endY; y++) {
             cursor.setY(y);
-            if (level.getBlockState(cursor).getLightBlock(level, cursor) > 0) {
+            if (chunk.getBlockState(cursor).getLightBlock(level, cursor) > 0) {
                 return y - pos.getY();
             }
         }
@@ -144,7 +144,7 @@ public final class SkyExposureCache {
         return -1;
     }
 
-    private static OpeningSearch findNearestOpening(LevelReader level, BlockPos pos) {
+    private static OpeningSearch findNearestOpening(Level level, BlockPos pos) {
         int maximumDistance = BetterSkylightConfig.ANALYSIS_DISTANCE.get();
         for (int radius = 1; radius <= maximumDistance; radius = nextRadius(radius, maximumDistance)) {
             for (int sample = 0; sample < ANGULAR_SAMPLES; sample++) {
@@ -152,11 +152,12 @@ public final class SkyExposureCache {
                 int x = pos.getX() + (int) Math.round(Math.cos(angle) * radius);
                 int z = pos.getZ() + (int) Math.round(Math.sin(angle) * radius);
 
-                if (!hasLoadedChunk(level, x, z)) {
+                LevelChunk chunk = getLoadedChunk(level, x, z);
+                if (chunk == null) {
                     continue;
                 }
 
-                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+                int surfaceY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
                 if (surfaceY <= pos.getY() + 1) {
                     return new OpeningSearch(radius);
                 }
@@ -170,10 +171,13 @@ public final class SkyExposureCache {
         return new OpeningSearch(-1);
     }
 
-    private static boolean hasLoadedChunk(LevelReader level, int blockX, int blockZ) {
+    private static LevelChunk getLoadedChunk(Level level, int blockX, int blockZ) {
         int chunkX = SectionPos.blockToSectionCoord(blockX);
         int chunkZ = SectionPos.blockToSectionCoord(blockZ);
-        return level.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false) != null;
+        // getChunkNow is the non-blocking path on both client and server. Never
+        // ask Level#getChunk here: this method is also called from C2ME chunk
+        // workers, where waiting for another chunk can deadlock generation.
+        return level.getChunkSource().getChunkNow(chunkX, chunkZ);
     }
 
     private static int nextRadius(int radius, int maximumDistance) {
