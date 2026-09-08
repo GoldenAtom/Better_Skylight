@@ -95,7 +95,8 @@ public final class SkyExposureCache {
         double openness = Math.min(1.0D, coneRadius / openingDistance);
         int calculated = (int) Math.round(openness * 15.0D);
 
-        return Math.max(0, Math.min(15, calculated));
+        int ambientMinimum = Math.max(0, Math.min(15, calculated));
+        return Math.max(vanillaValue, ambientMinimum);
     }
 
     private static int inferPropagatedOpeningDistance(int vanillaValue) {
